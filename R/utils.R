@@ -1,20 +1,19 @@
-#utility file
+# Utility file
 # defines basic particle filter and
 # conditional particle filter with ancestor sampling
 
-library(smcUtils)
-### to be removed and passed as parameter
+
+### to be removed, should be passed as parameter
 transferFunc <- function(xt)
 {
   yt = xt^2/20
 }
-### to be removed and passed as parameter
+### to be removed, it should be passed as parameter
 stateTransFunc <- function(xt,t)
 {
   xt1 = 0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
   return(xt1)
 }
-
 
 particleFilter <- function(param, y, N = 100, resamplingMethod = "multi")
   # Particle filter

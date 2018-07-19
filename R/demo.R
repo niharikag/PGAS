@@ -28,6 +28,25 @@
 #
 library(plotly)
 
+# to be deleted, added just for the demo
+generateData <- function(T, Q, R)
+{
+  x = rep(0, T)
+  y = rep(0, T)
+  x[1] = 0  # Initial state
+
+  for(t in 1:T)
+  {
+    if(t < T)
+    {
+      x[t+1] = stateTransFunc(x[t],t) + sqrt(Q)*rnorm(1)
+    }
+    y[t] = transferFunc(x[t]) + sqrt(R)*rnorm(1)
+  }
+  return(list(x = x, y = y))
+}
+
+
 demo <- function()
 {
   # Set up some parameters
@@ -77,7 +96,7 @@ demo <- function()
             name = 'Filtered States', type = 'scatter', mode = 'lines+markers')
 
   # Run the algorithms
-  cat("Running PGAS (N=#i). Progress: ")
+  cat("Running PGAS : ")
   res = PGAS(numMCMC, y0, prior, N1, qinit, rinit, q0, r0)
   p <-plot_ly(x = c(1:T), y = x0,
               name = 'Real States', type = 'scatter', mode = 'lines+markers')
@@ -85,7 +104,7 @@ demo <- function()
             name = 'Filtered States', type = 'scatter', mode = 'lines+markers')
 
 
-  cat("Running PMMH (N=#i). Progress: ")
+  cat("Running PMMH : ")
   res = PMMH(numMCMC, y0, prior, prop, N2, qinit, rinit, q0, r0)
   p <-plot_ly(x = c(1:T), y = x0,
               name = 'Real States', type = 'scatter', mode = 'lines+markers')

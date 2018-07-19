@@ -1,1 +1,6 @@
 exportPattern("^[[:alpha:]]+")
+import(invgamma, smcUtils)
+export(PGAS)
+export(PMMH)
+export(particleFilter)
+export(conditionalParticleFilter)

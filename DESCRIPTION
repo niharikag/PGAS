@@ -1,11 +1,11 @@
 Package: PGAS
 Type: Package
-Title: What the Package Does (Title Case)
+Title: Particle Gibbs with Ancestor Sampling
 Version: 0.1.0
-Author: Niharika
+Author: Niharika Gauraha
 Maintainer: The package maintainer <niharika.gauraha@farmbio.uu.se>
-Description: The package implements  Particle Gibbs with Ancestor Sampling (PGAS) and the Particle Marginal Metropolis-Hastings (PMMH)
-algorithms.
-License: What license is it under?
+Description: The package implements  Particle Gibbs with Ancestor Sampling (PGAS) and the Particle Marginal Metropolis-Hastings (PMMH) algorithms. 
+Depends: invgamma, smcUtils
+License: GPL-3
 Encoding: UTF-8
 LazyData: true
