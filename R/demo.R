@@ -64,12 +64,10 @@ demo <- function()
   y0 <- res$y
 
   # Hyperparameters for the inverse gamma priors (uninformative)
-  prior.a = 0.01
-  prior.b = 0.01
+  prior = c(0.01, 0.01)
 
   # Parameter proposal for PMMH (Gaussian random walk)
-  prop.sigma_q = 1
-  prop.sigma_r = 1
+  prop = c(.01, .01)
 
   # Initialization for the parameters
   qinit = 1
@@ -100,17 +98,19 @@ demo <- function()
   res = PGAS(numMCMC, y0, prior, N1, qinit, rinit, q0, r0)
   p <-plot_ly(x = c(1:T), y = x0,
               name = 'Real States', type = 'scatter', mode = 'lines+markers')
-  add_lines(p, x = c(1:T), y = res$xHatFiltered,
+  add_lines(p, x = c(1:T), y = res$x[N1,], main = "PGAS",
             name = 'Filtered States', type = 'scatter', mode = 'lines+markers')
-
+  hist(res$q[burnin:numMCMC], main = "Distribution of the process noise variance", freq = FALSE)
+  hist(res$r[burnin:numMCMC], main = "Distribution of the measurement noise variance", freq = FALSE)
 
   cat("Running PMMH : ")
   res = PMMH(numMCMC, y0, prior, prop, N2, qinit, rinit, q0, r0)
   p <-plot_ly(x = c(1:T), y = x0,
               name = 'Real States', type = 'scatter', mode = 'lines+markers')
-  add_lines(p, x = c(1:T), y = res$xHatFiltered,
+  add_lines(p, x = c(1:T), y = res$x[N2,],
             name = 'Filtered States', type = 'scatter', mode = 'lines+markers')
 
-
+  hist(res$q[burnin:numMCMC], main = "Distribution of the process noise variance", freq = FALSE)
+  hist(res$r[burnin:numMCMC], main = "Distribution of the measurement noise variance", freq = FALSE)
 
 }

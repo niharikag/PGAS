@@ -12,12 +12,13 @@ PGAS <- function(numMCMC, y, prior, N, qinit, rinit, q0, r0)
   r = matrix(0, numMCMC, 1)
   X = matrix(0, numMCMC, T)
   # Initialize the parameters
+  prior.a <- prior[1]
+  prior.b <- prior[2]
   q[1] = qinit
   r[1] = rinit
   # Initialize the state by running a PF
   param = c(q[1], r[1])
-  res = conditionalParticleFilter(param, y, N, X)
-  X[1, ] <- res$xHatFiltered
+  res = conditionalParticleFilter(param, y, N, X[1,])
 
   # Run MCMC loop
   for(k in 2:numMCMC)

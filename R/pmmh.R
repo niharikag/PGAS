@@ -15,13 +15,17 @@ PMMH <- function(numMCMC, y, prior, prop, N, qinit, rinit, q0, r0)
   X = matrix(0, numMCMC,T)
   loglik = matrix(0, numMCMC,1)
   # Initialize the parameters
+  prior.a <- prior[1]
+  prior.b <- prior[2]
+  prop.sigma_q <- prop[1]
+  prop.sigma_r <- prop[2]
   q[1] = qinit
   r[1] = rinit
   # Initialize the state & likelihood by running a PF
   param = c(q[1], r[1])
   res = particleFilter(param, y, N)
   X[1, ] = res$xHatFiltered
-
+  loglik[1] <- res$logLikelihood
   # Run MCMC loop
 
   for(k in 2:numMCMC)
@@ -46,19 +50,14 @@ PMMH <- function(numMCMC, y, prior, prop, N, qinit, rinit, q0, r0)
         acceptprob = acceptprob *  # Prior contribution
           dinvgamma(q_prop,prior.a,prior.b)*dinvgamma(r_prop,prior.a,prior.b) /
           (dinvgamma(q[k-1],prior.a,prior.b)*dinvgamma(r[k-1],prior.a,prior.b))
+        q[k] = q_prop
+        r[k] = r_prop
+        loglik[k] = loglik_prop
+
         accept = runif(1) < acceptprob
     }
 
-    if(accept)
-    {
-        q[k] = q_prop
-        r[k] = r_prop
-        # Draw J (extract a particle trajectory)
-        J = sample(1, prob = w)
-        X[k,] = particles[J,]
-        loglik[k] = loglik_prop
-    }
-    else
+    if(!accept)
     {
         q[k] = q[k-1]
         r[k] = r[k-1]
@@ -66,17 +65,5 @@ PMMH <- function(numMCMC, y, prior, prop, N, qinit, rinit, q0, r0)
         loglik[k] = loglik[k-1]
     }
   }
-  return(list(q = q, r = r, X = X))
+  return(list(q = q, r = r, x = X))
 }
-
-#--------------------------------------------------------------------------
-igampdf <- function(x,a,b)
-# IGAMPDF Inverse Gamma probability density funciton
-#    Y = IGAMPDF(X,A,B) returns the inverse Gamma probability density
-#    function with shape and scale parameters A and B, respectively, at the
-#    values in X.
-{
-  y = exp(a*log(b) - dgamma(a, log = TRUE) - (a+1)*log(x) - b/x)
-  return(y)
-}
-#-------------------------------------------------------------------
