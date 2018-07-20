@@ -25,9 +25,11 @@ PGAS <- function(numMCMC, y, prior, N, qinit, rinit, q0, r0)
   {
     # Sample the parameters (inverse gamma posteriors)
     err_q = X[k-1,2:T] - stateTransFunc(X[k-1,1:T-1], 1:(T-1))
-    q[k] = rinvgamma(1, prior.a + (T-1)/2, prior.b + err_q*t(err_q)/2)
+    err_q = sum(err_q^2)
+    q[k] = rinvgamma(1, prior.a + (T-1)/2, prior.b + err_q/2)
     err_r = y - transferFunc(X[k-1,])
-    r[k] = rinvgamma(1, prior.a + T/2, prior.b + err_r*t(err_r)/2)
+    err_r <- sum(err_r^2)
+    r[k] = rinvgamma(1, prior.a + T/2, prior.b + err_r/2)
     # Run CPF-AS
     param <- c(q[k], r[k])
     res = conditionalParticleFilter(param, y, N, X[k-1, ])

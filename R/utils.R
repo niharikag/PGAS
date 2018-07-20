@@ -7,6 +7,7 @@
 transferFunc <- function(xt)
 {
   yt = xt^2/20
+  return(yt)
 }
 ### to be removed, it should be passed as parameter
 stateTransFunc <- function(xt,t)
@@ -133,7 +134,7 @@ conditionalParticleFilter <- function(param, y, N, X, resamplingMethod = "multi"
       ancestorIndices[, t] <- newAncestors
 
       xpred = stateTransFunc(particles[, t-1], t-1)
-      particles[,t] = xpred[newAncestors] + sqrt(Q)*rnorm(N,1)
+      particles[,t] = xpred[newAncestors] + sqrt(Q)*rnorm(N)
       if(conditioning)
       {
         particles[N,t] = X[t]  # Set the N:th particle according to the conditioning
@@ -149,7 +150,7 @@ conditionalParticleFilter <- function(param, y, N, X, resamplingMethod = "multi"
     ypred = transferFunc(particles[,t])
     logweights = -1/(2*R)*(y[t] - ypred)^2  # (up to an additive constant)
     const = max(logweights)  # Subtract the maximum value for numerical stability
-    weights = exp(logweights-const)
+    weights = exp(logweights - const)
     normalisedWeights[,t] = weights/sum(weights)  # Save the normalized weights
   }
 
