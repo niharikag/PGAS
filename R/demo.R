@@ -73,24 +73,29 @@ demo <- function()
   qinit = 1
   rinit = 0.1
 
+  cat("first plot true states and observed states ")
+  p <-plot_ly(x = c(1:T), y = x0,
+              name = 'Real States', type = 'scatter', mode = 'lines+markers')
+  add_lines(p, x = c(1:T), y = y0,
+            name = 'Observed States', type = 'scatter', mode = 'lines+markers')
 
   # Run the particle filter
   cat("Running particle filter ")
   param <- c(1, 0.1)
   res = particleFilter(param = param, y = y0, N = 100)
-  plot_ly(x = c(1:T), y = y0,
-          name = 'Simulated data', type = 'scatter', mode = 'lines+markers')
   p <-plot_ly(x = c(1:T), y = x0,
               name = 'Real States', type = 'scatter', mode = 'lines+markers')
-  add_lines(p, x = c(1:T), y = res$xHatFiltered,
+  J <- which(runif(1) < cumsum(res$w[,T]))[1]
+  add_lines(p, x = c(1:T), y = res$particles[J,],
             name = 'Filtered States', type = 'scatter', mode = 'lines+markers')
 
   cat("Running conditional particle filter ")
   param <- c(1, 0.1)
   res = conditionalParticleFilter(param = param, y = y0, N = 100, x0)
+  J <- which(runif(1) < cumsum(res$w[,T]))[1]
   p <-plot_ly(x = c(1:T), y = x0,
               name = 'Real States', type = 'scatter', mode = 'lines+markers')
-  add_lines(p, x = c(1:T), y = res$xHatFiltered,
+  add_lines(p, x = c(1:T), y = res$particles[J,],
             name = 'Filtered States', type = 'scatter', mode = 'lines+markers')
 
   # Run the algorithms
@@ -98,8 +103,8 @@ demo <- function()
   res = PGAS(numMCMC, y0, prior, N1, qinit, rinit, q0, r0)
   p <-plot_ly(x = c(1:T), y = x0,
               name = 'Real States', type = 'scatter', mode = 'lines+markers')
-  add_lines(p, x = c(1:T), y = res$x[N1,], main = "PGAS",
-            name = 'Filtered States', type = 'scatter', mode = 'lines+markers')
+  add_lines(p, x = c(1:T), y = res$x[N1,], name = 'Filtered States',
+            type = 'scatter', mode = 'lines+markers')
   hist(res$q[burnin:numMCMC], main = "Distribution of the process noise variance", freq = FALSE)
   hist(res$r[burnin:numMCMC], main = "Distribution of the measurement noise variance", freq = FALSE)
 

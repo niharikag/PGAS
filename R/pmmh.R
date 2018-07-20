@@ -24,7 +24,9 @@ PMMH <- function(numMCMC, y, prior, prop, N, qinit, rinit, q0, r0)
   # Initialize the state & likelihood by running a PF
   param = c(q[1], r[1])
   res = particleFilter(param, y, N)
-  X[1, ] = res$xHatFiltered
+  # Draw
+  J <- which(runif(1) < cumsum(res$w[,T]))[1]
+  X[1, ] = res$particles[J,]
   loglik[1] <- res$logLikelihood
   # Run MCMC loop
 
@@ -43,7 +45,9 @@ PMMH <- function(numMCMC, y, prior, prop, N, qinit, rinit, q0, r0)
         # Run a PF to evaluate the likelihood
         param <- c(q_prop, r_prop)
         res = particleFilter(param, y, N)
-        X[k, ] = res$xHatFiltered
+        J <- which(runif(1) < cumsum(res$w[,T]))[1]
+        X[k, ] = res$particles[J,]
+        #X[k, ] = res$xHatFiltered
         loglik_prop <- res$logLikelihood
 
         acceptprob = exp(loglik_prop - loglik[k-1]) # Likelihood contribution

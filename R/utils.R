@@ -16,6 +16,7 @@ stateTransFunc <- function(xt,t)
   return(xt1)
 }
 
+
 particleFilter <- function(param, y, N = 100, resamplingMethod = "multi")
   # Particle filter
   # Input:
@@ -77,12 +78,19 @@ particleFilter <- function(param, y, N = 100, resamplingMethod = "multi")
     normalisedWeights[,t] = weights/sum(weights) # Save the normalized weights
   }
 
+  # Generate the trajectories from ancestor indices
+  ind = ancestorIndices[,T]
+  for(t in (T-1):1)
+  {
+    particles[,t] = particles[ind,t];
+    ind = ancestorIndices[ind,t]
+  }
+
   return(list(xHatFiltered = xHatFiltered,
               logLikelihood = logLikelihood,
               particles = particles,
               weights = normalisedWeights))
 }
-
 
 #--------------------------------------------------------------------------
 conditionalParticleFilter <- function(param, y, N, X, resamplingMethod = "multi")
@@ -130,8 +138,6 @@ conditionalParticleFilter <- function(param, y, N, X, resamplingMethod = "multi"
       {
         newAncestors <- multinomial.resample(normalisedWeights[, t - 1])
       }
-      # Store the ancestor indices
-      ancestorIndices[, t] <- newAncestors
 
       xpred = stateTransFunc(particles[, t-1], t-1)
       particles[,t] = xpred[newAncestors] + sqrt(Q)*rnorm(N)
@@ -142,8 +148,11 @@ conditionalParticleFilter <- function(param, y, N, X, resamplingMethod = "multi"
         m = exp(-1/(2*Q)*(X[t]-xpred)^2)
         w_as = normalisedWeights[,t-1]*m
         w_as = w_as/sum(w_as)
-        newAncestors[N] = N
+        newAncestors[N] = which(runif(1) < cumsum(w_as))[1]
       }
+      # Store the ancestor indices
+      ancestorIndices[, t] <- newAncestors
+
       xHatFiltered[t] <- mean(particles[, t])
     }
     # Compute importance weights
@@ -152,6 +161,14 @@ conditionalParticleFilter <- function(param, y, N, X, resamplingMethod = "multi"
     const = max(logweights)  # Subtract the maximum value for numerical stability
     weights = exp(logweights - const)
     normalisedWeights[,t] = weights/sum(weights)  # Save the normalized weights
+  }
+
+  # Generate the trajectories from ancestor indices
+  ind = ancestorIndices[,T]
+  for(t in (T-1):1)
+  {
+    particles[,t] = particles[ind,t];
+    ind = ancestorIndices[ind,t]
   }
 
   return(list(xHatFiltered = xHatFiltered,

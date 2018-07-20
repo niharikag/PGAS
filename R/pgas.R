@@ -19,7 +19,8 @@ PGAS <- function(numMCMC, y, prior, N, qinit, rinit, q0, r0)
   # Initialize the state by running a PF
   param = c(q[1], r[1])
   res = conditionalParticleFilter(param, y, N, X[1,])
-
+  J <- which(runif(1) < cumsum(res$w[,T]))[1]
+  X[1, ] = res$particles[J,]
   # Run MCMC loop
   for(k in 2:numMCMC)
   {
@@ -33,7 +34,9 @@ PGAS <- function(numMCMC, y, prior, N, qinit, rinit, q0, r0)
     # Run CPF-AS
     param <- c(q[k], r[k])
     res = conditionalParticleFilter(param, y, N, X[k-1, ])
-    X[k, ] <- res$xHatFiltered
+    J <- which(runif(1) < cumsum(res$w[,T]))[1]
+    X[k, ] = res$particles[J,]
+    #X[k, ] <- res$xHatFiltered
   }
   return(list(q = q, r = r, x = X))
 }
