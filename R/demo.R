@@ -28,25 +28,6 @@
 #
 library(plotly)
 
-# to be deleted, added just for the demo
-generateData <- function(T, Q, R)
-{
-  x = rep(0, T)
-  y = rep(0, T)
-  x[1] = 0  # Initial state
-
-  for(t in 1:T)
-  {
-    if(t < T)
-    {
-      x[t+1] = stateTransFunc(x[t],t) + sqrt(Q)*rnorm(1)
-    }
-    y[t] = transferFunc(x[t]) + sqrt(R)*rnorm(1)
-  }
-  return(list(x = x, y = y))
-}
-
-
 demo <- function()
 {
   # Set up some parameters
