@@ -22,10 +22,10 @@ PMMH(param, y, x0, prior, prop, M = 1000, N = 100, resamplingMethod = "multi")
   initial state
 }
   \item{prior}{
-  Hyperparameters for the inverse gamma priors (uninformative)
+  hyperparameters for the inverse gamma priors (uninformative)
 }
   \item{prop}{
-  Proposal for PMMH (Gaussian random walk)
+  proposal for PMMH (Gaussian random walk)
 }
   \item{M}{
   number of MCMC runs
@@ -38,9 +38,9 @@ resampling methods: 'multi' multinomial and 'systematic' systematic resampling m
 }
 }
 \value{
-  \item{q }{Sample path of the process noise Q}
-  \item{r }{Sample path of the measurement noise R}
-  \item{x }{Sample path of the states}
+  \item{q }{sample path of the process noise Q}
+  \item{r }{sample path of the measurement noise R}
+  \item{x }{sample path of the states}
 }
 \references{
 [1] C. Andrieu, A. Doucet and R. Holenstein, "Particle Markov chain Monte Carlo methods" Journal of the Royal Statistical Society: Series B, 2010, 72, 269-342.
@@ -79,7 +79,7 @@ generateData <- function(param, x0, T)
 }
 
 stateTransFunc = function(xt, t)  0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
-  transferFunc = function(x) x^2/20
+transferFunc = function(x) x^2/20
 
   # Set up some parameters
   N1 = 5                 # Number of particles used in PGAS
@@ -113,8 +113,10 @@ stateTransFunc = function(xt, t)  0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
   # p <-plot_ly(x = c(1:T), y = x,
   #            name = 'Real States', type = 'scatter', mode = 'lines  +markers')
   # add_lines(p, x = c(1:T), y = res$x[N2,],
-            name = 'PMMH States', type = 'scatter', mode = 'lines+markers')
+  #          name = 'PMMH States', type = 'scatter', mode = 'lines+markers')
   #plot histrograms of the process noise variance and the measurement variance
-  hist(res$q[burnin:numMCMC], main = "Distribution of the process noise variance", freq = FALSE)
-  hist(res$r[burnin:numMCMC], main = "Distribution of the measurement noise variance", freq = FALSE)
+  #hist(res$q[burnin:numMCMC], main = "Distribution of the process noise variance",
+  #freq = FALSE)
+  #hist(res$r[burnin:numMCMC], main = "Distribution of the measurement noise variance",
+  #freq = FALSE)
 }

@@ -29,8 +29,8 @@ particleFilter(param, y, x0, N = 100, resamplingMethod = "multi")
 }
 \value{
   \item{particles }{particles}
-  \item{logLikelihood }{log Likelihood}
-  \item{normalisedWeights}{ normalised Weights}
+  \item{logLikelihood }{log likelihood}
+  \item{normalisedWeights}{ normalised weights}
 }
 
 \author{
@@ -67,7 +67,7 @@ generateData <- function(param, x0, T)
 }
 
 stateTransFunc = function(xt, t)  0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
-  transferFunc = function(x) x^2/20
+transferFunc = function(x) x^2/20
 
   # Set up some parameters
   T = 100                # Length of data record

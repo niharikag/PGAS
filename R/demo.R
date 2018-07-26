@@ -42,11 +42,11 @@ generateData <- function(param, x0, T)
   return(list(x = x, y = y))
 }
 
+stateTransFunc = function(xt, t)  0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
+transferFunc = function(x) x^2/20
+
 demo <- function()
 {
-  stateTransFunc = function(xt, t)  0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
-  transferFunc = function(x) x^2/20
-
   # Set up some parameters
   N1 = 5                 # Number of particles used in PGAS
   N2 = 500               # Number of particles used in PMMH
@@ -65,52 +65,52 @@ demo <- function()
   # Hyperparameters for the inverse gamma priors (uninformative)
   prior = c(0.01, 0.01)
 
-  cat("First plot true states and observed states ")
-  p <-plot_ly(x = c(1:T), y = x,
-              name = 'Real States', type = 'scatter', mode = 'lines+markers')
-  add_lines(p, x = c(1:T), y = y,
-            name = 'Observed States', type = 'scatter', mode = 'lines+markers')
+  #cat("First plot true states and observed states ")
+  #p <-plot_ly(x = c(1:T), y = x,
+  #            name = 'Real States', type = 'scatter', mode = 'lines+markers')
+  #add_lines(p, x = c(1:T), y = y,
+  #          name = 'Observed States', type = 'scatter', mode = 'lines+markers')
 
   # Run the particle filter
   cat("Running particle filter ")
   param <- list(f = stateTransFunc, g = transferFunc, Q = Q, R = R)
   res = particleFilter(param = param, y = y, x0 = 0, N = 100)
-  p <-plot_ly(x = c(1:T), y = x,
-              name = 'Real States', type = 'scatter', mode = 'lines+markers')
-  J <- which(runif(1) < cumsum(res$w[,T]))[1]
-  add_lines(p, x = c(1:T), y = res$particles[J,],
-            name = 'Filtered States', type = 'scatter', mode = 'lines+markers')
+  #p <-plot_ly(x = c(1:T), y = x,
+  #            name = 'Real States', type = 'scatter', mode = 'lines+markers')
+  #J <- which(runif(1) < cumsum(res$w[,T]))[1]
+  #add_lines(p, x = c(1:T), y = res$particles[J,],
+  #          name = 'Filtered States', type = 'scatter', mode = 'lines+markers')
 
   cat("Running conditional particle filter ")
   param <- list(f = stateTransFunc, g = transferFunc, Q = Q, R = R)
   res = conditionalParticleFilter(param = param, y = y, x0 = 0, X = x, N = 100)
-  J <- which(runif(1) < cumsum(res$w[,T]))[1]
-  p <-plot_ly(x = c(1:T), y = x,
-              name = 'Real States', type = 'scatter', mode = 'lines+markers')
-  add_lines(p, x = c(1:T), y = res$particles[J,],
-            name = 'CPF_AS Filtered States', type = 'scatter', mode = 'lines+markers')
+  #J <- which(runif(1) < cumsum(res$w[,T]))[1]
+  #p <-plot_ly(x = c(1:T), y = x,
+  #            name = 'Real States', type = 'scatter', mode = 'lines+markers')
+  #add_lines(p, x = c(1:T), y = res$particles[J,],
+  #            name = 'CPF_AS Filtered States', type = 'scatter', mode = 'lines+markers')
 
   cat("Running PGAS : ")
   param <- list(f = stateTransFunc, g = transferFunc, Q = 1, R = 0.1)
   res = PGAS(param, y, x0 = 0, prior = prior, M = numMCMC, N = N1)
-  p <-plot_ly(x = c(1:T), y = x,
-              name = 'Real States', type = 'scatter', mode = 'lines+markers')
-  add_lines(p, x = c(1:T), y = res$x[N1,], name = 'PGAS States',
-            type = 'scatter', mode = 'lines+markers')
+  #p <-plot_ly(x = c(1:T), y = x,
+  #            name = 'Real States', type = 'scatter', mode = 'lines+markers')
+  #add_lines(p, x = c(1:T), y = res$x[N1,], name = 'PGAS States',
+  #          type = 'scatter', mode = 'lines+markers')
   # plot histrograma of the process noise variance and the measurement variance
-  hist(res$q[burnin:numMCMC], main = "Distribution of the process noise variance", freq = FALSE)
-  hist(res$r[burnin:numMCMC], main = "Distribution of the measurement noise variance", freq = FALSE)
+  #hist(res$q[burnin:numMCMC], main = "Distribution of the process noise variance", freq = FALSE)
+  #hist(res$r[burnin:numMCMC], main = "Distribution of the measurement noise variance", freq = FALSE)
 
   cat("Running PMMH : ")
   # Proposal for PMMH (Gaussian random walk)
   prop = c(.1, .1)
   param <- list(f = stateTransFunc, g = transferFunc, Q = .1, R = 1)
   res = PMMH(param, y, x0 = 0, prior, prop, N = N2, M = numMCMC)
-  p <-plot_ly(x = c(1:T), y = x,
-              name = 'Real States', type = 'scatter', mode = 'lines+markers')
-  add_lines(p, x = c(1:T), y = res$x[N2,],
-            name = 'PMMH States', type = 'scatter', mode = 'lines+markers')
+  #p <-plot_ly(x = c(1:T), y = x,
+  #            name = 'Real States', type = 'scatter', mode = 'lines+markers')
+  #add_lines(p, x = c(1:T), y = res$x[N2,],
+  #          name = 'PMMH States', type = 'scatter', mode = 'lines+markers')
   #plot histrograms of the process noise variance and the measurement variance
-  hist(res$q[burnin:numMCMC], main = "Distribution of the process noise variance", freq = FALSE)
-  hist(res$r[burnin:numMCMC], main = "Distribution of the measurement noise variance", freq = FALSE)
+  #hist(res$q[burnin:numMCMC], main = "Distribution of the process noise variance", freq = FALSE)
+  #hist(res$r[burnin:numMCMC], main = "Distribution of the measurement noise variance", freq = FALSE)
 }

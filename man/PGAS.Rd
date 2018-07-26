@@ -20,7 +20,7 @@ PGAS(param, y, x0, prior, M = 1000, N = 100, resamplingMethod = "multi")
   initial state
 }
   \item{prior}{
-  Hyperparameters for the inverse gamma priors (uninformative)
+  hyperparameters for the inverse gamma priors (uninformative)
 }
   \item{M}{
   number of MCMC runs
@@ -34,9 +34,9 @@ PGAS(param, y, x0, prior, M = 1000, N = 100, resamplingMethod = "multi")
 }
 
 \value{
-  \item{q }{Sample path of the process noise Q}
-  \item{r }{Sample path of the measurement noise R}
-  \item{x }{Sample path of the states}
+  \item{q }{sample path of the process noise Q}
+  \item{r }{sample path of the measurement noise R}
+  \item{x }{sample path of the states}
 }
 \references{
 [1] Lindsten, Fredrik, Michael I. Jordan, and Thomas B. Schön. "Particle Gibbs with ancestor sampling." The Journal of Machine Learning Research 15.1 (2014): 2145-2184.
@@ -74,7 +74,7 @@ generateData <- function(param, x0, T)
   return(list(x = x, y = y))
 }
 
-stateTransFunc = function(xt, t)  0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
+  stateTransFunc = function(xt, t)  0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
   transferFunc = function(x) x^2/20
 
   # Set up some parameters
@@ -109,8 +109,10 @@ stateTransFunc = function(xt, t)  0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
   #add_lines(p, x = c(1:T), y = res$x[N1,], name = 'PGAS States',
   #          type = 'scatter', mode = 'lines+markers')
   # plot histrograma of the process noise variance and the measurement variance
-  hist(res$q[burnin:numMCMC], main = "Distribution of the process noise variance", freq = FALSE)
-  hist(res$r[burnin:numMCMC], main = "Distribution of the measurement noise variance", freq = FALSE)
+  #hist(res$q[burnin:numMCMC], main = "Distribution of the process noise variance",
+  #freq = FALSE)
+  #hist(res$r[burnin:numMCMC], main = "Distribution of the measurement noise variance",
+  #freq = FALSE)
 
 
 }

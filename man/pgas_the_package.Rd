@@ -1,6 +1,6 @@
 \docType{package}
-\name{An Introduction of the package PGAS}
-\alias{package-PGAS}
+\name{ PGAS-package}
+\alias{PGAS-package}
 \title{Implementation of  Particle Gibbs with Ancestor Sampling and  and the Particle Marginal Metropolis-Hastings algorithms}
 
 \description{
