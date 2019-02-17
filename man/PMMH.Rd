@@ -71,9 +71,9 @@ generateData <- function(param, x0, T)
   {
     if(t < T)
     {
-      x[t+1] = stateTransFunc(x[t],t) + sqrt(Q)*rnorm(1)
+      x[t+1] = f(x[t],t) + sqrt(Q)*rnorm(1)
     }
-    y[t] = transferFunc(x[t]) + sqrt(R)*rnorm(1)
+    y[t] = g(x[t]) + sqrt(R)*rnorm(1)
   }
   return(list(x = x, y = y))
 }

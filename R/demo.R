@@ -16,8 +16,9 @@
 # priors for PGAS and PMMH algorithms.
 #
 #
-#require(plotly)
+require(plotly)
 #require(PGAS)
+require(smcUtils)
 
 generateData <- function(param, x0, T)
 {
@@ -30,20 +31,82 @@ generateData <- function(param, x0, T)
   x = rep(0, T)
   y = rep(0, T)
   x[1] = x0  # Initial state
+  y[1] = 0 #g(x[1]) + sqrt(R)*rnorm(1)
 
-  for(t in 1:T)
+  for(t in 2:T)
   {
-    if(t < T)
-    {
-      x[t+1] = stateTransFunc(x[t],t) + sqrt(Q)*rnorm(1)
-    }
-    y[t] = transferFunc(x[t]) + sqrt(R)*rnorm(1)
+    x[t] = f(x[t-1],t-1) + sqrt(Q)*rnorm(1)
+    y[t] = g(x[t]) + sqrt(R)*rnorm(1)
   }
   return(list(x = x, y = y))
+
 }
 
-stateTransFunc = function(xt, t)  0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
-transferFunc = function(x) x^2/20
+demoBPF <- function()
+{
+  # Set up some parameters
+  N = 100 # Number of particles
+  T = 100 # Length of data record
+
+  # define functions
+  stateTransFunc = function(xt, t)  0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
+  transferFunc = function(x) x^2/20
+
+  # Generate data
+  Q = 0.1  # True process noise variance
+  R = 1 # True measurement noise variance
+  param <- list(f = stateTransFunc, g = transferFunc, Q = Q, R = R)
+  res = generateData(param = param, x0 = 0, T = T)
+  x <- res$x
+  y <- res$y
+
+  x_ref = rep(0, N)
+  res_bpf = BPF(param = param, y = y, x0 = 0, N = 100)
+  res_pg = PG(param = param, y = y, x_ref = x_ref, x0 = 0, N = 100, iter = 1000)
+  res_pgas = PGAS(param = param, y = y, x_ref = x_ref, x0 = 0, N = 100, iter = 1000)
+
+  p <-plot_ly(x = c(1:T), y = x,
+              name = 'Real States', type = 'scatter', mode = 'lines+markers')
+  p<-add_lines(p, x = c(1:T), y = res_bpf,
+              name = 'SMC Filtered States', type = 'scatter', mode = 'lines+markers')
+  p <- add_lines(p, x = c(1:T), y = res_pg,
+            name = 'PG Filtered States', type = 'scatter', mode = 'lines+markers')
+
+  add_lines(p, x = c(1:T), y = res_pgas,
+            name = 'PGAS Filtered States', type = 'scatter', mode = 'lines+markers')
+}
+
+
+demoAPF <- function()
+{
+  # Set up some parameters
+  N = 100  # Number of particles
+  T = 100 # Length of data record
+
+  # define functions
+  stateTransFunc = function(xt, t)  0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
+  transferFunc = function(x) x^2/20
+
+  # Generate data
+  Q = 0.1  # True process noise variance
+  R = 1 # True measurement noise variance
+  param <- list(f = stateTransFunc, g = transferFunc, Q = Q, R = R)
+  res = generateData(param = param, x0 = 0, T = T)
+  x <- res$x
+  y <- res$y
+
+  #x_ref = rep(0, T)
+  x_ref = x
+  res = APF(param = param, y = y, x0 = rep(0, T), N = 100)
+  res_bpf = BPF(param = param, y = y, x0 = 0, N = 100)
+  #J <- which(runif(1) < cumsum(res$normalisedWeights[,T]))[1]
+  p <-plot_ly(x = c(1:T), y = x,
+              name = 'Real States', type = 'scatter', mode = 'lines+markers')
+  p<-add_lines(p, x = c(1:T), y = res_bpf,
+               name = 'BPF Filtered States', type = 'scatter', mode = 'lines+markers')
+  add_lines(p, x = c(1:T), y = res,
+            name = 'APF Filtered States', type = 'scatter', mode = 'lines+markers')
+}
 
 demo <- function()
 {
@@ -53,6 +116,10 @@ demo <- function()
   T = 100                # Length of data record
   numMCMC = 3000         # Number of iterations in the MCMC samplers
   burnin = 300           # Number of interations to burn
+
+  # define functions
+  stateTransFunc = function(xt, t)  0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
+  transferFunc = function(x) x^2/20
 
   # Generate data
   Q = 0.1  # True process noise variance
@@ -74,6 +141,9 @@ demo <- function()
   # Run the particle filter
   cat("Running particle filter ")
   param <- list(f = stateTransFunc, g = transferFunc, Q = Q, R = R)
+  x_ref = rep(0, T)
+  res = conditionalParticleFilter(param = param, y = y, x0 = 0, x_ref = x_ref, N = 100)
+
   res = particleFilter(param = param, y = y, x0 = 0, N = 100)
   #p <-plot_ly(x = c(1:T), y = x,
   #            name = 'Real States', type = 'scatter', mode = 'lines+markers')

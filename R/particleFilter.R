@@ -1,4 +1,4 @@
-# Particle filter
+# Particle filter: CFP-AS
 # Conditional particle filter with ancestor sampling
 # Input:
 #   param - state parameters

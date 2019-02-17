@@ -56,7 +56,7 @@ PGAS <- function(param, y, x0, prior,
     r[k] = rinvgamma(1, prior.a + T/2, prior.b + err_r/2)
     # Run CPF-AS
     param <- list(f = f, g = g, Q = q[k], R = r[k])
-    res = conditionalParticleFilter(param = param, y = y, x0 = x0, X = X[k-1,], N = 100)
+    res = CPF(param = param, y = y, x0 = x0, X = X[k-1,], N = 100)
     J <- which(runif(1) < cumsum(res$w[,T]))[1]
     X[k, ] = res$particles[J,]
   }
