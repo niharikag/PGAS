@@ -14,7 +14,7 @@
 #     multinomical and systematics resampling methods are supported
 # Output:
 #       The function returns the sample paths of (q, r, x_{1:T})
-PGAS <- function(param, y, prior, x0=0, M = 1000,
+PG <- function(param, y, prior, x0=0, M = 1000,
                  N = 100, resamplingMethod = "multi")
 {
   # Stop, if input parameters are NULL
@@ -41,7 +41,7 @@ PGAS <- function(param, y, prior, x0=0, M = 1000,
   r[1] = RInit
   # Initialize the state by running a PF
   param <- list(f = f, g = g, Q = q[1], R = r[1])
-  X[1, ] = CPF_AS(param = param, y = y, x0 = x0, x_ref = X[1,], N = N)
+  X[1, ] = CPF(param = param, y = y, x0 = x0, x_ref = X[1,], N = N)
 
   # Run MCMC loop
   for(k in 2:M)
@@ -55,7 +55,7 @@ PGAS <- function(param, y, prior, x0=0, M = 1000,
     r[k] = rinvgamma(1, prior.a + T/2, prior.b + err_r/2)
     # Run CPF-AS
     param <- list(f = f, g = g, Q = q[k], R = r[k])
-    X[k, ] = CPF_AS(param = param, y = y, x0 = x0, x_ref = X[k-1,], N = N)
+    X[k, ] = CPF(param = param, y = y, x0 = x0, x_ref = X[k-1,], N = N)
   }
   return(list(q = q, r = r, x = X))
 }
