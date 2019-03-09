@@ -1,8 +1,8 @@
-# Implementation of PGAS algorithm introduced in
+# Implementation of PG algorithm introduced in
 #
-#  Lindsten, Fredrik, Michael I. Jordan, and Thomas B. Schön.
-#    "Particle Gibbs with ancestor sampling."
-#    The Journal of Machine Learning Research 15.1 (2014): 2145-2184.
+#  Andrieu, Christophe, Arnaud Doucet, and Roman Holenstein.
+#  "Particle markov chain monte carlo methods." Journal of the
+#  Royal Statistical Society: Series B (Statistical Methodology) 72.3 (2010): 269-342.
 #
 # Input:
 #   param - state parameters
@@ -31,8 +31,8 @@ PG <- function(param, y, prior, x0=0, M = 1000,
   QInit <- param$Q # process noise variance
   RInit <- param$R # measurement noise variance
 
-  q = matrix(0, M, 1)
-  r = matrix(0, M, 1)
+  q = rep(0, M)
+  r = rep(0, M)
   X = matrix(0, M, T)
   # Initialize the parameters
   prior.a <- prior[1]
@@ -41,21 +41,23 @@ PG <- function(param, y, prior, x0=0, M = 1000,
   r[1] = RInit
   # Initialize the state by running a PF
   param <- list(f = f, g = g, Q = q[1], R = r[1])
-  X[1, ] = CPF(param = param, y = y, x0 = x0, x_ref = X[1,], N = N)
+  result <- APF(param = param, y = y, x0 = x0, N = 100)
+  X[1, ] = result$x
 
   # Run MCMC loop
   for(k in 2:M)
   {
     # Sample the parameters (inverse gamma posteriors)
-    err_q = X[k-1,2:T] - f(X[k-1,1:T-1], 1:(T-1))
+    err_q = X[k-1,2:T] - f(X[k-1,1:(T-1)], 1:(T-1))
     err_q = sum(err_q^2)
-    q[k] = rinvgamma(1, prior.a + (T-1)/2, prior.b + err_q/2)
+    q[k] = 1/rgamma(1, shape= prior.a + (T-1)/2, rate = prior.b + err_q/2)
     err_r = y - g(X[k-1,])
     err_r <- sum(err_r^2)
-    r[k] = rinvgamma(1, prior.a + T/2, prior.b + err_r/2)
+    r[k] = 1/rgamma(1, prior.a + T/2, prior.b + err_r/2)
     # Run CPF-AS
     param <- list(f = f, g = g, Q = q[k], R = r[k])
-    X[k, ] = CPF(param = param, y = y, x0 = x0, x_ref = X[k-1,], N = N)
+    result = CPF(param = param, y = y, x0 = x0, x_ref = X[k-1,], N = N)
+    X[k, ] = result$x
   }
   return(list(q = q, r = r, x = X))
 }

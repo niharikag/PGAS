@@ -1,7 +1,6 @@
-# For matlab implementaion, see http://www.it.uu.se/katalog/freli660/software
 # Demo of the Particle Filter (PF), Conditional Particle Filter
 # with ancenstor sampling (CPF-AS), Gibbs with Ancestor
-# Sampling (PGAS) and the Particle Marginal Metropolis-Hastings (PMMH)
+# Sampling (PGAS) and the interacting Particle MCMC  (iPMCMC)
 # algorithms.
 #
 # The script generates a batch of data y_{1:T} from the the standard
@@ -17,37 +16,16 @@
 #
 #
 require(plotly)
-#require(PGAS)
 require(smcUtils)
-#library(invgamma)
+source("R/baseParticleFilter.R")
 source("R/utils.R")
 source("R/conditionalParticleFilter.R")
 source("R/APF.R")
-#source("R/particleGibbs.R")
+source("R/particleGibbs.R")
 source("R/CPF_AS.R")
 source("R/pgas.R")
 source("R/SMC.R") # for bootstrap PF
-generateData <- function(param, x0, T)
-{
-  #Initialize the state parameters
-  f <- param$f # state transition function
-  g <- param$g # tranfer function
-  Q <- param$Q # process noise variance
-  R <- param$R # measurement noise variance
 
-  x = rep(0, T)
-  y = rep(0, T)
-  x[1] = x0  # Initial state
-  y[1] = g(x[1]) + sqrt(R)*rnorm(1)
-
-  for(t in 2:T)
-  {
-    x[t] = f(x[t-1],t-1) + sqrt(Q)*rnorm(1)
-    y[t] = g(x[t]) + sqrt(R)*rnorm(1)
-  }
-  return(list(x = x, y = y))
-
-}
 
 demoBPF <- function()
 {
@@ -62,27 +40,31 @@ demoBPF <- function()
   # Generate data
   Q = 0.1  # True process noise variance
   R = 1 # True measurement noise variance
+  x0 = 0
   param <- list(f = stateTransFunc, g = transferFunc, Q = Q, R = R)
   res = generateData(param = param, x0 = 0, T = T)
   x <- res$x
   y <- res$y
 
   x_ref = rep(0, N)
-  #res_bpf = BPF(param = param, y = y, x0 = 0, N = 100, plotGeneology='all', lengthGeneology = 19)
-  #res_pg = iteratedCPF(param = param, y = y, x_ref = x_ref, x0 = 0, N = 100, iter = 100)
-  #res_pgas = iteratedCPFAS(param = param, y = y, x_ref = x_ref, x0 = 0, N = 10, iter = 100)
-  res_bpf_multi = BPF(param = param, y = y, x0 = 0, N = 100, resamplingMethod = "multi")
-  res_bpf_sys = BPF(param = param, y = y, x0 = 0, N = 100, resamplingMethod = "systematic")
-  res_bpf_strat = BPF(param = param, y = y, x0 = 0, N = 100, resamplingMethod = "stratified")
+  bpf = BPF(stateTransFunc, transferFunc, Q, R, x0)
+  bpf$generateWeightedParticles(y)
+  bpf$plotGeneology()
+  x_multi = bpf$sampleStateTrajectory()
+
+  bpf$generateWeightedParticles(y, resamplingMethod = "systematic")
+  x_sys = bpf$sampleStateTrajectory()
+
+  bpf$generateWeightedParticles(y, resamplingMethod = "stratified")
+  x_stra = bpf$sampleStateTrajectory()
 
   p <-plot_ly(x = c(1:T), y = x,
               name = 'Real States', type = 'scatter', mode = 'lines+markers')
-  p<-add_lines(p, x = c(1:T), y = res_bpf_multi,
+  p<-add_lines(p, x = c(1:T), y = x_multi,
               name = 'SMC Filtered States', type = 'scatter', mode = 'lines+markers')
-  p <- add_lines(p, x = c(1:T), y = res_bpf_sys,
+  p <- add_lines(p, x = c(1:T), y = x_sys,
             name = 'SMC+Systematic Filtered States', type = 'scatter', mode = 'lines+markers')
-
-  add_lines(p, x = c(1:T), y = res_bpf_strat,
+  add_lines(p, x = c(1:T), y = x_stra,
             name = 'SMC+Stratified Filtered States', type = 'scatter', mode = 'lines+markers')
 }
 
@@ -138,13 +120,13 @@ demoCPF_AS <- function()
   res = generateData(param = param, x0 = 0, T = T)
   x <- res$x
   y <- res$y
-
+  x0 = 0
   x_ref = rep(0, N)
-  res_cpfas = iteratedCPFAS(param = param, y = y, x0 = 0, N = 10, x_ref = x_ref,
+  res_cpfas = iteratedCPFAS(param = param, y = y, x0 = 0, N = N, x_ref = x_ref,
                 plotGeneology='all', lengthGeneology = 19)
-  res_cpfas_multi = iteratedCPFAS(param = param, y = y, x0 = 0, N = 10, x_ref = x_ref)
-  res_cpfas_sys = iteratedCPFAS(param = param, y = y, x0 = 0, N = 10, x_ref = x_ref, resamplingMethod = "systematic")
-  res_cpfas_strat = iteratedCPFAS(param = param, y = y, x0 = 0, N = 10, x_ref = x_ref, resamplingMethod = "stratified")
+  res_cpfas_multi = iteratedCPFAS(param = param, y = y, x0 = 0, N = N, x_ref = x_ref)
+  res_cpfas_sys = iteratedCPFAS(param = param, y = y, x0 = 0, N = N, x_ref = x_ref, resamplingMethod = "systematic")
+  res_cpfas_strat = iteratedCPFAS(param = param, y = y, x0 = 0, N = N, x_ref = x_ref, resamplingMethod = "stratified")
 
   p <-plot_ly(x = c(1:T), y = x,
               name = 'Real States', type = 'scatter', mode = 'lines+markers')
@@ -175,28 +157,27 @@ demoAPF <- function()
   y <- res$y
 
   #res_bpf = BPF(param = param, y = y, x0 = 0, N = 100)
-  #APF(param = param, y = y, x0 = 0, N = 100, resamplingMethod = "stratified", plotGeneology = 'all')
-  res_apf_multi = APF(param = param, y = y, x0 = 0, N = 100, resamplingMethod = "multi")
-  res_apf_sys = APF(param = param, y = y, x0 = 0, N = 100, resamplingMethod = "systematic")
-  res_apf_strat = APF(param = param, y = y, x0 = 0, N = 100, resamplingMethod = "stratified")
+  APF(param = param, y = y, x0 = 0, N = 100, resamplingMethod = "stratified", plotGeneology = 'all', lengthGeneology = 40)
+  res_apf_multi = APF(param = param, y = y, x0 = 0, N = N, resamplingMethod = "multi")
+  res_apf_sys = APF(param = param, y = y, x0 = 0, N = N, resamplingMethod = "systematic")
+  res_apf_strat = APF(param = param, y = y, x0 = 0, N = N, resamplingMethod = "stratified")
 
   p <-plot_ly(x = c(1:T), y = x,
               name = 'Real States', type = 'scatter', mode = 'lines+markers')
-  p<-add_lines(p, x = c(1:T), y = res_apf_multi,
+  p<-add_lines(p, x = c(1:T), y = res_apf_multi$x,
                name = 'APF Filtered States', type = 'scatter', mode = 'lines+markers')
-  p <- add_lines(p, x = c(1:T), y = res_apf_sys,
+  p <- add_lines(p, x = c(1:T), y = res_apf_sys$x,
                  name = 'APF+Systematic Filtered States', type = 'scatter', mode = 'lines+markers')
-
-  add_lines(p, x = c(1:T), y = res_apf_strat,
+  add_lines(p, x = c(1:T), y = res_apf_strat$x,
             name = 'APF+Stratified Filtered States', type = 'scatter', mode = 'lines+markers')
 }
 
 demoPG <- function()
 {
   # Set up some parameters
-  N = 100                 # Number of particles used in PGAS
+  N = 10               # Number of particles used in PGAS
   T = 100                # Length of data record
-  numMCMC = 10000         # Number of iterations in the MCMC samplers
+  numMCMC = 1000         # Number of iterations in the MCMC samplers
   burnin = 3000           # Number of interations to burn
 
   # define functions
@@ -219,12 +200,12 @@ demoPG <- function()
 
   # Run the particle Gibbs filter
   cat("Running particle Gibbs ")
-  param <- list(f = stateTransFunc, g = transferFunc, Q = 1, R = .1)
+  param <- list(f = stateTransFunc, g = transferFunc, Q = .1, R = .1)
   x_ref = x #rep(0, T)
   numMCMC=1000
   burnin=300
   res_pg = PG(param = param, y = y, x0 = 0, prior = prior,
-              N = 100, M = numMCMC)
+              N = N, M = numMCMC)
 
   p <-plot_ly(x = c(1:T), y = x, name = 'Real States', type = 'scatter',
               mode = 'lines+markers', line = list(color = "black"))
@@ -245,6 +226,7 @@ demoPG <- function()
               mode = 'lines+markers', line = list(color = "black"))
   add_lines(p, x = c(1:T), y = res_pgas$x[numMCMC,], name = 'PGAS States',
             type = 'scatter', mode = 'markers', line = list(color = "green"))
+  burnin =300
   # plot histrograma of the process noise variance and the measurement variance
   hist(res_pgas$q[burnin:numMCMC], main = "Distribution of the process noise variance",
        breaks = 100, freq = FALSE)

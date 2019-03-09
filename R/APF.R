@@ -24,7 +24,16 @@ APF <- function(param, y, x0, N = 100, resamplingMethod = "multi",
   {
     stop("Error: the input parameters are NULL")
   }
-
+  # set resampling method
+  if(resamplingMethod == 'systematic')
+  {
+    resampling <- systematic.resample
+  }else if(resamplingMethod == 'stratified')
+  {
+    resampling <- stratified.resample
+  }else{
+    resampling <- multinomial.resample
+  }
   # Number of states
   T <- length(y)
   #Initialize the state parameters
@@ -37,58 +46,39 @@ APF <- function(param, y, x0, N = 100, resamplingMethod = "multi",
   particles <- matrix(0, nrow = N, ncol = T)
   normalisedWeights <- matrix(0, nrow = N, ncol = T)
   B <- matrix(0, nrow = N, ncol = T) # for ancestral geneology
+  logLikelihood <- 0
 
   # Init state, at t=0
   particles[, 1] = x0  # Deterministic initial condition
+  normalisedWeights[, 1] = 1/N
 
   for (t in 2:T) {
-    # weighting step
-    temp_p = f(particles[,t-1],t-1)
-    logweights = dnorm(y[t], mean = g(temp_p), sd = sqrt(R), log = TRUE)
+    # resampling step
+    newAncestors <- resampling(normalisedWeights[, t-1])
+    xpred = f(particles[,t-1], t-1)
+    logweights = dnorm(y[t], mean = g(xpred[newAncestors]), sd = sqrt(R), log = TRUE)
     const = max(logweights)
     # Subtract the maximum value for numerical stability
     w = exp(logweights - const)
     w = w/sum(w)  # Save the normalized weights
 
-    # resampling step
-    if(resamplingMethod == 'systematic')
-    {
-      newAncestors <- systematic.resample(w)
-    }
-    else if(resamplingMethod == 'stratified')
-    {
-      newAncestors <- stratified.resample(w)
-    }
-    else{
-      newAncestors <- multinomial.resample(w)
-    }
+    ancestors = resampling(w)
+    newAncestors = newAncestors[ancestors]
     B[, t-1] = newAncestors
 
     # propogation step
-    #particles[, t-1] = particles[newAncestors, t-1]
-    particles[,t] = f(particles[newAncestors, t-1], t-1) + sqrt(Q)*rnorm(N)
+    particles[,t] = xpred[newAncestors] + sqrt(Q)*rnorm(N)
 
     # weighting step
     logweights = dnorm(y[t], mean = g(particles[,t]), sd = sqrt(R), log = TRUE)
-    const = max(logweights)
+    max_weight = max(logweights)
     # Subtract the maximum value for numerical stability
-    new_weights = exp(logweights - const)/w[newAncestors]
+    new_weights = exp(logweights - max_weight)/w[ancestors]
     normalisedWeights[,t] = new_weights/sum(new_weights)  # Save the normalized weights
 
-    # resampling step
-    if(resamplingMethod == 'systematic')
-    {
-      newAncestors <- systematic.resample(normalisedWeights[, t])
-    }
-    else if(resamplingMethod == 'stratified')
-    {
-      newAncestors <- stratified.resample(normalisedWeights[, t])
-    }
-    else{
-      newAncestors <- multinomial.resample(normalisedWeights[, t])
-    }
-
-    particles[, t] = particles[newAncestors, t]
+    # accumulate the log-likelihood
+    logLikelihood = logLikelihood + max_weight +
+      log(sum(new_weights)) - log(N)
   }
 
   B[,T] <- 1:N
@@ -108,5 +98,5 @@ APF <- function(param, y, x0, N = 100, resamplingMethod = "multi",
   for (t in 1:T) {
     x_star[t] = particles[B[J,t],t]
   }
-  return(x_star)
+  return(list(x=x_star, logLikelihood=logLikelihood))
 }
