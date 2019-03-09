@@ -17,7 +17,8 @@
     normalisedWeights = "matrix",
     B = "matrix",
     T = "numeric",
-    N = "numeric"
+    N = "numeric",
+    logLikelihood = "numeric"
   ),
   methods = list(
     initialize = function(stateTransFunc, transFunc, processNoise,
@@ -33,6 +34,7 @@
       resampling <<- NULL
       T <<- 0
       N <<- 10
+      logLikelihood <<- 0
     },
     generateWeightedParticles = function(samplingMethod)
     {
@@ -68,13 +70,13 @@
       return(x_star)
 
     },
-    sampleProcessNoise = function()
+    getLogLikelihood = function()
     {
-      print("Sample process noise variance")
-    },
-    sampleMeasurementNoise = function()
-    {
-      print("Sample measurement noise variance")
+      if(T==0){
+        stop("Error: call generateWeightedParticles first")
+      }
+
+      return(logLikelihood)
     }
   )
 )

@@ -14,50 +14,77 @@
 #     multinomical and systematics resampling methods are supported
 # Output:
 #       The function returns the sample paths of (q, r, x_{1:T})
-PG <- function(param, y, prior, x0=0, M = 1000,
-                 N = 100, resamplingMethod = "multi")
-{
-  # Stop, if input parameters are NULL
-  if(is.null(param) || is.null(y) || is.null(x0))
-  {
-    stop("Error: the input parameters are NULL")
-  }
 
-  # Number of states
-  T <- length(y)
-  #Initialize the state parameters
-  f <- param$f # state transition function
-  g <- param$g # tranfer function
-  QInit <- param$Q # process noise variance
-  RInit <- param$R # measurement noise variance
+ParticleGibbs <- setRefClass(
+  "ParticleGibbs", contains = "CPF",
+  fields = list(
+    q = 'matrix',
+    r = 'matrix'
+  ),
+  methods = list(
+    initialize = function(stateTransFunc, transFunc, processNoise=0,
+                          observationNoise=0, X_init=0, X_ref=NULL, ancestorSampling=FALSE)
+    {
+      "This method is called when you create an instance of the class."
+      if(is.null(stateTransFunc) || is.null(transFunc) )
+      {
+        stop("Error: the input parameters are NULL")
+      }
 
-  q = rep(0, M)
-  r = rep(0, M)
-  X = matrix(0, M, T)
-  # Initialize the parameters
-  prior.a <- prior[1]
-  prior.b <- prior[2]
-  q[1] = QInit
-  r[1] = RInit
-  # Initialize the state by running a PF
-  param <- list(f = f, g = g, Q = q[1], R = r[1])
-  result <- APF(param = param, y = y, x0 = x0, N = 100)
-  X[1, ] = result$x
+      callSuper(stateTransFunc, transFunc, processNoise,
+                observationNoise,  X_init, X_ref, ancestorSampling)
+    },
+    simulate = function(y, X_ref, nParticles = 100, resamplingMethod = 'multi',
+                        QInit=0.1, RInit=0.1, prior_a = 0.01, prior_b = 0.01, M=100)
+    {
+      if(Q!=0 && R!=0){
+        # noise varianced are known, sample only state trajectory
+        iteratedCPF(y, x_ref, nParticles, resamplingMethod, M)
+      }
+      else{
+        # Number of states
+        T <<- length(y)
+        #QInit <<- Q_init # process noise variance
+        #RInit <<- R_init # measurement noise variance
+        q <<- matrix(0, M, 1)
+        r <<-matrix(0, M, 1)
+        X = matrix(0, M, T)
+        Q <<- QInit
+        R <<- RInit
+        # Initialize the state by running a PF
+        generateWeightedParticles(y, X_ref, nParticles)
+        X[1, ] = sampleStateTrajectory()
 
-  # Run MCMC loop
-  for(k in 2:M)
-  {
-    # Sample the parameters (inverse gamma posteriors)
-    err_q = X[k-1,2:T] - f(X[k-1,1:(T-1)], 1:(T-1))
-    err_q = sum(err_q^2)
-    q[k] = 1/rgamma(1, shape= prior.a + (T-1)/2, rate = prior.b + err_q/2)
-    err_r = y - g(X[k-1,])
-    err_r <- sum(err_r^2)
-    r[k] = 1/rgamma(1, prior.a + T/2, prior.b + err_r/2)
-    # Run CPF-AS
-    param <- list(f = f, g = g, Q = q[k], R = r[k])
-    result = CPF(param = param, y = y, x0 = x0, x_ref = X[k-1,], N = N)
-    X[k, ] = result$x
-  }
-  return(list(q = q, r = r, x = X))
-}
+        # Run MCMC loop
+        for(k in 2:M)
+        {
+          # Sample the parameters (inverse gamma posteriors)
+          err_q = X[k-1,2:T] - f(X[k-1,1:(T-1)], 1:(T-1))
+          err_q = sum(err_q^2)
+          q[k] <<- 1/rgamma(1, shape= prior_a + (T-1)/2, rate = prior_b + err_q/2)
+          err_r = y - g(X[k-1,])
+          err_r <- sum(err_r^2)
+          r[k]  <<-  1/rgamma(1, prior_a + T/2, prior_b + err_r/2)
+          # Run CPF-AS
+          Q <<- q[k]
+          R <<- r[k]
+          # Initialize the state by running a PF
+          generateWeightedParticles(y, X[k-1,])
+          X[k, ] = sampleStateTrajectory()
+        }
+        return(X[M, ])
+      }
+    },
+    sampleProcessNoise = function()
+    {
+      return(q)
+    },
+    sampleMeasurementNoise = function()
+    {
+      return(r)
+    }
+
+  )
+)
+
+

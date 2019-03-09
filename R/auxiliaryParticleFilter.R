@@ -1,6 +1,24 @@
+######################################################################################
+#
+# Author : Niharika Gauraha
+#          Uppsala University, Uppsala
+#          Email : niharika.gauraha@farmbio.uu.se
+#
+#
+#####################################################################################
+
+# APF: Auxiliary particle filter
+# Input:
+#   param   - state parameters
+#   y       - measurements
+#   x0      - initial state
+#   N       - number of particles
+# Output:
+#   x_star  - sample from target distribution
+
 # SMC (APF): Auxiliary particle filter
-BPF <- setRefClass(
-  "BPF", contains = "BaseParticleFilter",
+APF <- setRefClass(
+  "APF", contains = "BaseParticleFilter",
   #fields = list( ),
   methods = list(
     initialize = function(stateTransFunc, transFunc, processNoise=1,
@@ -37,34 +55,42 @@ BPF <- setRefClass(
       particles <<- matrix(0, nrow = N, ncol = T)
       normalisedWeights <<- matrix(0, nrow = N, ncol = T)
       B <<- matrix(0, nrow = N, ncol = T) # for ancestral geneology
+      logLikelihood <<- 0
 
       # Init state, at t=0
       particles[, 1] <<- x0  # Deterministic initial condition
-      # weighting step
-      logweights = dnorm(y[1], mean = g(particles[,1]), sd = sqrt(R), log = TRUE)
-      const = max(logweights)  # Subtract the maximum value for numerical stability
-      weights = exp(logweights - const)
-      normalisedWeights[,1] <<- weights/sum(weights)  # Save the normalized weights
+      normalisedWeights[, 1] <<- 1/N
       B[, 1] <<- 1:N
 
       for (t in 2:T) {
-        newAncestors <- resampling(normalisedWeights[,t-1])
-        #particles[, t-1] = particles[newAncestors, t-1]
+        # resampling step
+        newAncestors <- resampling(normalisedWeights[, t-1])
+        xpred = f(particles[,t-1], t-1)
+        logweights = dnorm(y[t], mean = g(xpred[newAncestors]), sd = sqrt(R), log = TRUE)
+        max_weight = max(logweights)
+        # Subtract the maximum value for numerical stability
+        w = exp(logweights - max_weight)
+        w = w/sum(w)  # Save the normalized weights
+
+        # accumulate the log-likelihood
+        logLikelihood <<- logLikelihood + max_weight +
+          log(sum(w)) - log(N)
+
+        ancestors = resampling(w)
+        newAncestors = newAncestors[ancestors]
         B[, t-1] <<- newAncestors
 
         # propogation step
-        particles[,t] <<- f(particles[newAncestors, t-1], t-1) + sqrt(Q)*rnorm(N)
+        particles[,t] <<- xpred[newAncestors] + sqrt(Q)*rnorm(N)
 
         # weighting step
         logweights = dnorm(y[t], mean = g(particles[,t]), sd = sqrt(R), log = TRUE)
-        const = max(logweights)  # Subtract the maximum value for numerical stability
-        weights = exp(logweights - const)
-        normalisedWeights[,t] <<- weights/sum(weights)  # Save the normalized weights
+        max_weight = max(logweights)
+        # Subtract the maximum value for numerical stability
+        new_weights = exp(logweights - max_weight)/w[ancestors]
+        normalisedWeights[,t] <<- new_weights/sum(new_weights)  # Save the normalized weights
       }
-
       B[,T] <<- 1:N
-
     }
   )
 )
-
