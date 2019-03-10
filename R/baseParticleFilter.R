@@ -77,6 +77,14 @@
       }
 
       return(logLikelihood)
+    },
+    setParameters = function(stateTransFunc, transFunc, processNoise, observationNoise)
+    {
+      "set parameters"
+      f <<- stateTransFunc
+      g <<- transFunc
+      Q <<- processNoise
+      R <<- observationNoise
     }
   )
 )

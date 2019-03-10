@@ -23,7 +23,7 @@ source("R/conditionalParticleFilter.R")
 source("R/auxiliaryParticleFilter.R")
 source("R/particleGibbs.R")
 source("R/bootstrapParticleFilter.R") # for bootstrap PF
-
+source("R/GPSSM.R")
 
 demoBPF <- function()
 {
@@ -243,3 +243,77 @@ demoPGAS <- function()
        xlab = "", ylab = "", freq = FALSE,  breaks = 100)
 
 }
+
+
+demoGPSSM <- function(){
+  T = 500
+  # Define the true functions f and g
+  f <- function(x, t){
+    return(tanh(2 * x))
+  }
+
+  g <- function(x){
+    return (x)
+  }
+
+  # Set true noise covariance matrix
+  Q = 0.1
+  R = 0.1
+
+  # Simulate trajectory
+  param <- list(f = f, g = g, Q = Q, R = R)
+  res = generateData(param = param, x0 = 1, T = T)
+
+  x = res$x
+  y = res$y
+  xv = seq(-3, 3, len=100)
+
+  plot(xv, f(xv, 0), main = 'Nonlinear function (to be learned)', type="l")
+
+  hist(x)
+
+  plot(x, type = "l", main = 'Data as a time series')
+
+  # Priors for hyperparameters
+  ell_prior = function(ell){
+    return(dnorm(log(ell), mean = 0, sd = 0.1, log = TRUE))
+  }
+
+  # Priors for hyperparameters
+  Sf_prior = function(Sf){
+    return(dnorm(log(Sf), mean = 0, sd = 10, log = TRUE))
+  }
+
+  #GP covariance function prior:
+  S_SE = function(w, ell){
+    return(sqrt(2 * pi * ell^2) * exp(-(w^2 / 2)* (ell^2)))
+  }
+
+  S_f = function(lx, Sfx, lambda_x){
+    return((1 / Sfx) * diag(1 / S_SE(sqrt(lambda_x), lx)))
+  }
+
+  gpssm = GPSSM(stateTransFunc=NULL, transFunc=g, processNoise=0, observationNoise=R,
+                X_init=1, X_ref=NULL, ancestorSampling=FALSE)
+
+  x_gpssm = gpssm$fit(y, m=16, lQ = 10, LambdaQ = 1,
+                      L = 4, N=10, K_MH = 5, K=100)
+  xv = seq(-3, 3, len=100)
+  phi_x_xv = gpssm$phi_x(m=16, L=4, xv)
+  f_m = gpssm$f %*% phi_x_xv
+
+  # plot functions first
+  p <-plot_ly(x = xv, y = f(xv,1),
+              name = 'True function', type = 'scatter', mode = 'lines')
+  add_lines(p, x = xv, y = f_m[1,],
+            name = 'GPSSM learned function', type = 'scatter', mode = 'lines')
+
+  p <-plot_ly(x = c(1:T), y = x,
+              name = 'Real States', type = 'scatter', mode = 'lines+markers')
+  add_lines(p, x = c(1:T), y = x_gpssm,
+            name = 'GPSSM learned States', type = 'scatter', mode = 'lines')
+
+  hist(gpssm$Qr)
+}
+
+

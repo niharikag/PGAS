@@ -1,4 +1,14 @@
-# Conditional particle filter or Conditional SMC (CSMC)
+# Implementation of Conditional Particle Filter (CPF) and
+# CPF with Ancestor Sampling (CPF_AS) algorithms introduced in:
+#
+#  Andrieu, Christophe, Arnaud Doucet, and Roman Holenstein.
+#  "Particle markov chain monte carlo methods." Journal of the
+#  Royal Statistical Society: Series B (Statistical Methodology) 72.3 (2010): 269-342.
+# &
+# Lindsten, Fredrik, Michael I. Jordan, and Thomas B. Schön. "Particle Gibbs with ancestor sampling."
+# The Journal of Machine Learning Research 15.1 (2014): 2145-2184.
+#
+#
 # Input:
 #   param - state parameters
 #   y - measurements

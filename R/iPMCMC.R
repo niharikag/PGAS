@@ -1,5 +1,7 @@
-# Implementation of iPMCMC algorithm introduced in
+# Implementation of iPMCMC algorithm introduced in:
 #
+# Rainforth, Tom, et al. "Interacting particle Markov chain Monte Carlo."
+# International Conference on Machine Learning. 2016.
 #
 # Input:
 #   param - state parameters
@@ -43,65 +45,80 @@ iPG <- function(param, y, x0=0, nNodes = 4, N = 100, M = 1000,
   # Initialize the state by running an APF
   #param <- list(f = f, g = g, Q = Q, R = R)
 
-  cl<-makeCluster(nNodes)
-  clusterExport(cl, c( "APF", "CPF_AS", "param", "y", "x0"))
-  registerDoParallel(cl)
-  # initialize reference particles for all CSMS nodes
-  res <- foreach(k = 1:nNode_CSMC, .combine = "cbind", .packages = c("smcUtils")) %dopar%
-  {
-    APF(param = param, y = y, x0 = x0,  N = N)
+
+  #clusterExport(cl, c( "APF", "param", "y", "x0","stateTransFunc","transferFunc", "Q", "R"))
+  list_pf = c()
+  for (i in 1:nNode_CSMC) {
+    pf = APF(stateTransFunc, transferFunc, Q, R, x0)
+    list_pf = c(list_pf,pf)
   }
 
-  stopCluster(cl)
-  x_refs[1, ] = unlist(res[1])
-  index = 2
-  for (i in 1:(nNode_CSMC-1)) {
-    x_refs[index, ] = unlist(res[i*2+1])
-    index = index+1
+  #cl<-makeCluster(nNode_CSMC)
+  #clusterExport(cl, c( "list_pf"))
+  #registerDoParallel(cl)
+  # initialize reference particles for all CSMS nodes
+  #x_refs = foreach(k = 1:nNode_CSMC, .combine = "rbind", .packages = c("smcUtils")) %dopar%
+  for (k in 1:nNode_CSMC)
+  {
+    #pf = unlist(list_pf[k])
+    #pf$generateWeightedParticles(y)
+    list_pf[[k]]$generateWeightedParticles(y)
+    x_refs[k, ] = list_pf[[k]]$sampleStateTrajectory()
+  }
+  #stopCluster(cl)
+
+  list_pf = c()
+  for (i in 1:nNode_SMC) {
+    pf = APF(stateTransFunc, transferFunc, Q, R, x0)
+    list_pf = c(list_pf,pf)
+  }
+
+  list_cpf = c()
+  for (i in 1:nNode_CSMC) {
+    pf = CPF(stateTransFunc, transferFunc, Q, R, x0)
+    list_cpf = c(list_cpf,pf)
   }
 
   # Run MCMC loop
   for(m in 2:M)
   {
-    cl<-makeCluster(nNodes)
-    clusterExport(cl, c( "APF", "CPF_AS", "param", "y", "x0"))
-    registerDoParallel(cl)
-
-    res <- foreach(k = 1:nNode_SMC, .combine = "cbind", .packages = c("smcUtils")) %dopar%
+    #cl<-makeCluster(nNode_SMC)
+    #clusterExport(cl, c( "list_pf"))
+    #registerDoParallel(cl)
+    # simulate for all SMC nodes
+    #res_pf = foreach(k = 1:nNode_SMC, .combine = "rbind", .packages = c("smcUtils")) %dopar%
+    for (k in 1:nNode_SMC)
     {
-      APF(param = param, y = y, x0 = x0,  N = N)
+      list_pf[[k]]$generateWeightedParticles(y)
+      X_smc[k, ] = list_pf[[k]]$sampleStateTrajectory()
+      ll_smc[k] = list_pf[[k]]$getLogLikelihood()
+      #list(x_ref = xRef, ll=x_ll)
     }
+    #stopCluster(cl)
 
-    stopCluster(cl)
+    #for (i in 1:nNode_SMC) {
+    #  X_smc[i, ] = unlist(res_pf[i])
+    #  ll_smc[i] <- exp(unlist(res_pf[i+nNode_SMC]))
+    #}
 
-    X_smc[1, ] = unlist(res[1])
-    ll_smc[1] = exp(unlist(res[2]))
-    index = 2
-    for (i in 1:(nNode_SMC-1)) {
-      X_smc[index, ] = unlist(res[i*2+1])
-      ll_smc[index] <- exp(unlist(res[i*2+2]))
-      index = index+1
-    }
+    #cl<-makeCluster(nNodes)
+    #clusterExport(cl, c( "list_cpf"))
+    #registerDoParallel(cl)
 
-    cl<-makeCluster(nNodes)
-    clusterExport(cl, c( "APF", "CPF_AS", "param", "y", "x0"))
-    registerDoParallel(cl)
-
-    res <- foreach(k = 1:nNode_CSMC, .combine = "cbind", .packages = c("smcUtils")) %dopar%
+    #res_cpf <- foreach(k = 1:nNode_CSMC, .combine = "rbind", .packages = c("smcUtils")) %dopar%
+    for (k in 1:nNode_CSMC)
     {
-      CPF_AS(param = param, y = y, x0 = x0,  x_ref = x_refs[k, ], N = N)
+      list_cpf[[k]]$generateWeightedParticles(y, x_refs[k,])
+      X_csmc[k,] = list_cpf[[k]]$sampleStateTrajectory()
+      ll_csmc[k] = list_cpf[[k]]$getLogLikelihood()
+      #list(x_ref = xRef, ll=x_ll)
     }
-    stopCluster(cl)
+    #stopCluster(cl)
 
-    X_csmc[1, ] = unlist(res[1])
-    ll_csmc[1] = exp(unlist(res[2]))
-    index = 2
-    for (i in 1:(nNode_CSMC-1)) {
-      X_csmc[index, ] = unlist(res[i*2+1])
-      ll_csmc[index] <- exp(unlist(res[i*2+2]))
-      index = index+1
-    }
-
+    #for (i in 1:nNode_CSMC) {
+    #  X_csmc[i, ] = unlist(res_cpf[i])
+    #  ll_csmc[i] <- exp(unlist(res_cpf[i+nNode_CSMC]))
+    #}
 
     # TO DO: weights
     weights = rep(0, nNode_SMC+1)
