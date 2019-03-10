@@ -142,32 +142,3 @@ iPG <- function(param, y, x0=0, nNodes = 4, N = 100, M = 1000,
   index = systematic.resample(norm_weights, num.samples=1)
   return(x_refs[index,])
 }
-
-
-
-demo_iPG <- function()
-{
-  # Set up some parameters
-  N = 100 # Number of particles
-  T = 100 # Length of data record
-
-  # define functions
-  stateTransFunc = function(xt, t)  0.5*xt + 25*xt/(1+xt^2) + 8*cos(1.2*t)
-  transferFunc = function(x) x^2/20
-
-  # Generate data
-  Q = 0.1  # True process noise variance
-  R = 1 # True measurement noise variance
-  param <- list(f = stateTransFunc, g = transferFunc, Q = Q, R = R)
-  res = generateData(param = param, x0 = 0, T = T)
-  x <- res$x
-  y <- res$y
-  x0 = 0
-  x_ref = rep(0, N)
-  res_iPG = iPG(param = param, y = y, x0 = x0, N = N, M=10)
-
-  p <-plot_ly(x = c(1:T), y = x,
-              name = 'Real States', type = 'scatter', mode = 'lines+markers')
-  add_lines(p, x = c(1:T), y = res_iPG,
-               name = 'CPF_AS Filtered States', type = 'scatter', mode = 'lines+markers')
-}

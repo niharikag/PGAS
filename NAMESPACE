@@ -1,5 +1,4 @@
-import(invgamma, smcUtils, stats)
-export(PGAS)
-export(PMMH)
-export(particleFilter)
+import(smcUtils, stats)
+export(BPF)
+export(APF)
 export(conditionalParticleFilter)

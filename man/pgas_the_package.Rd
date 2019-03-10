@@ -1,15 +1,14 @@
 \docType{package}
 \name{ PGAS-package}
 \alias{PGAS-package}
-\title{Implementation of  Particle Gibbs with Ancestor Sampling and  and the Particle Marginal Metropolis-Hastings algorithms}
+\title{Implementation of  Particle Gibbs Particle Gibbs Method and its Extensions and Variants}
 
 \description{
-Implementation of  Particle Gibbs with Ancestor Sampling ([1]) and the Particle Marginal Metropolis-Hastings ([2]) algorithms. See  (<http://www.it.uu.se/katalog/freli660/software>) for implementation in 'MATLAB'.
+Implementation of  Particle Gibbs Particle Gibbs Method and its Extensions and Variants
 }
 
 \details{
-
-This package offeres a inverse gamma prior based solution for the PGAS and PMMH algorithms. In future, more generalized priors are planned to be supported. We refer to [1] for theoretical details of PGAS, [2] for details on PMMH algorithm and [3] for implementation details of PGAS and PMMH in MATLAB.
+Implementation of  Particle Gibbs Particle Gibbs Method and its Extensions and Variants
 
 }
 
@@ -18,5 +17,9 @@ This package offeres a inverse gamma prior based solution for the PGAS and PMMH 
 
 [2] C. Andrieu, A. Doucet and R. Holenstein, "Particle Markov chain Monte Carlo methods" Journal of the Royal Statistical Society: Series B, 2010, 72, 269-342.
 
-[3] Lindsten, Fredrik, http://www.it.uu.se/katalog/freli660/software
+[3] Rainforth, Tom, et al. "Interacting particle Markov chain Monte Carlo."
+International Conference on Machine Learning. 2016.
+
+[4] Svensson, Andreas, et al. "Computationally efficient Bayesian learning of
+Gaussian process state space models." Artificial Intelligence and Statistics. 2016.
 }

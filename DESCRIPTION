@@ -4,8 +4,8 @@ Title: Particle Gibbs with Ancestor Sampling
 Version: 1.0.0
 Author: Niharika Gauraha
 Maintainer: Niharika Gauraha <niharika.gauraha@farmbio.uu.se>
-Description: Implementation of  Particle Gibbs with Ancestor Sampling (see Svensson et al., 2014) and the Particle Marginal Metropolis-Hastings (see Andrieu et. al., 2010) algorithms, see  (<http://www.it.uu.se/katalog/freli660/software>) for implementation details in 'MATLAB'.
-Depends: invgamma, smcUtils, stats
+Description: Implementation of  Particle Gibbs Particle Gibbs Method and its Extensions and Variants
+Depends: smcUtils, stats
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
