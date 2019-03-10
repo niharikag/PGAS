@@ -42,83 +42,68 @@ iPG <- function(param, y, x0=0, nNodes = 4, N = 100, M = 1000,
   ll_csmc = rep(0, nNode_CSMC)
   x_refs = matrix(0, nNode_CSMC, T)
 
-  # Initialize the state by running an APF
-  #param <- list(f = f, g = g, Q = Q, R = R)
-
-
-  #clusterExport(cl, c( "APF", "param", "y", "x0","stateTransFunc","transferFunc", "Q", "R"))
   list_pf = c()
   for (i in 1:nNode_CSMC) {
-    pf = APF(stateTransFunc, transferFunc, Q, R, x0)
+    pf = APF(f, g, Q, R, x0)
     list_pf = c(list_pf,pf)
   }
 
-  #cl<-makeCluster(nNode_CSMC)
-  #clusterExport(cl, c( "list_pf"))
-  #registerDoParallel(cl)
-  # initialize reference particles for all CSMS nodes
-  #x_refs = foreach(k = 1:nNode_CSMC, .combine = "rbind", .packages = c("smcUtils")) %dopar%
-  for (k in 1:nNode_CSMC)
+  no_cores <- detectCores() - 1
+  cl <- makeCluster(no_cores, type="FORK")
+  registerDoParallel(cl)
+  x_refs = foreach(k = 1:nNode_CSMC, .combine = "rbind", .packages = c("smcUtils")) %dopar%
   {
-    #pf = unlist(list_pf[k])
-    #pf$generateWeightedParticles(y)
     list_pf[[k]]$generateWeightedParticles(y)
-    x_refs[k, ] = list_pf[[k]]$sampleStateTrajectory()
+    list_pf[[k]]$sampleStateTrajectory()
   }
-  #stopCluster(cl)
+  stopCluster(cl)
 
   list_pf = c()
   for (i in 1:nNode_SMC) {
-    pf = APF(stateTransFunc, transferFunc, Q, R, x0)
+    pf = APF(f, g, Q, R, x0)
     list_pf = c(list_pf,pf)
   }
 
   list_cpf = c()
   for (i in 1:nNode_CSMC) {
-    pf = CPF(stateTransFunc, transferFunc, Q, R, x0)
+    pf = CPF(f, g, Q, R, x0)
     list_cpf = c(list_cpf,pf)
   }
 
   # Run MCMC loop
   for(m in 2:M)
   {
-    #cl<-makeCluster(nNode_SMC)
-    #clusterExport(cl, c( "list_pf"))
-    #registerDoParallel(cl)
-    # simulate for all SMC nodes
-    #res_pf = foreach(k = 1:nNode_SMC, .combine = "rbind", .packages = c("smcUtils")) %dopar%
-    for (k in 1:nNode_SMC)
+    cl <- makeCluster(no_cores, type="FORK")
+    registerDoParallel(cl)
+    res_pf = foreach(k = 1:nNode_SMC, .combine = "rbind", .packages = c("smcUtils")) %dopar%
     {
       list_pf[[k]]$generateWeightedParticles(y)
-      X_smc[k, ] = list_pf[[k]]$sampleStateTrajectory()
-      ll_smc[k] = list_pf[[k]]$getLogLikelihood()
-      #list(x_ref = xRef, ll=x_ll)
+      xRef = list_pf[[k]]$sampleStateTrajectory()
+      x_ll = list_pf[[k]]$getLogLikelihood()
+      list(x_ref = xRef, ll=x_ll)
     }
-    #stopCluster(cl)
+    stopCluster(cl)
 
-    #for (i in 1:nNode_SMC) {
-    #  X_smc[i, ] = unlist(res_pf[i])
-    #  ll_smc[i] <- exp(unlist(res_pf[i+nNode_SMC]))
-    #}
+    for (i in 1:nNode_SMC) {
+      X_smc[i, ] = unlist(res_pf[i])
+      ll_smc[i] <- exp(unlist(res_pf[i+nNode_SMC]))
+    }
 
-    #cl<-makeCluster(nNodes)
-    #clusterExport(cl, c( "list_cpf"))
-    #registerDoParallel(cl)
-
-    #res_cpf <- foreach(k = 1:nNode_CSMC, .combine = "rbind", .packages = c("smcUtils")) %dopar%
-    for (k in 1:nNode_CSMC)
+    cl <- makeCluster(no_cores, type="FORK")
+    registerDoParallel(cl)
+    res_cpf <- foreach(k = 1:nNode_CSMC, .combine = "rbind", .packages = c("smcUtils")) %dopar%
     {
       list_cpf[[k]]$generateWeightedParticles(y, x_refs[k,])
-      X_csmc[k,] = list_cpf[[k]]$sampleStateTrajectory()
-      ll_csmc[k] = list_cpf[[k]]$getLogLikelihood()
-      #list(x_ref = xRef, ll=x_ll)
+      xRef = list_cpf[[k]]$sampleStateTrajectory()
+      x_ll = list_cpf[[k]]$getLogLikelihood()
+      list(x_ref = xRef, ll=x_ll)
     }
-    #stopCluster(cl)
+    stopCluster(cl)
 
-    #for (i in 1:nNode_CSMC) {
-    #  X_csmc[i, ] = unlist(res_cpf[i])
-    #  ll_csmc[i] <- exp(unlist(res_cpf[i+nNode_CSMC]))
-    #}
+    for (i in 1:nNode_CSMC) {
+      X_csmc[i, ] = unlist(res_cpf[i])
+      ll_csmc[i] <- exp(unlist(res_cpf[i+nNode_CSMC]))
+    }
 
     # TO DO: weights
     weights = rep(0, nNode_SMC+1)
