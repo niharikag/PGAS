@@ -69,12 +69,10 @@ APF <- setRefClass(
         logweights = dnorm(y[t], mean = g(xpred[newAncestors]), sd = sqrt(R), log = TRUE)
         max_weight = max(logweights)
         # Subtract the maximum value for numerical stability
-        w = exp(logweights - max_weight)
-        w = w/sum(w)  # Save the normalized weights
-
+        weights = exp(logweights - max_weight)
+        w = weights/sum(weights)  # Save the normalized weights
         # accumulate the log-likelihood
-        logLikelihood <<- logLikelihood + max_weight +
-          log(sum(w)) - log(N)
+        logLikelihood <<- logLikelihood + max_weight + log(sum(weights)) - log(N)
 
         ancestors = resampling(w)
         newAncestors = newAncestors[ancestors]

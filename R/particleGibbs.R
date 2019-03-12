@@ -42,7 +42,7 @@ ParticleGibbs <- setRefClass(
     {
       if(Q!=0 && R!=0){
         # noise varianced are known, sample only state trajectory
-        iteratedCPF(y, x_ref, nParticles, resamplingMethod, M)
+        return(iteratedCPF(y, X_ref, nParticles, resamplingMethod, M))
       }
       else{
         # Number of states
@@ -52,10 +52,12 @@ ParticleGibbs <- setRefClass(
         q <<- matrix(0, M, 1)
         r <<-matrix(0, M, 1)
         X = matrix(0, M, T)
+        q[1] <<- QInit
+        r[1] <<- RInit
         Q <<- QInit
         R <<- RInit
         # Initialize the state by running a PF
-        generateWeightedParticles(y, X_ref, nParticles)
+        generateWeightedParticles(y, X_ref, nParticles, resamplingMethod)
         X[1, ] = sampleStateTrajectory()
 
         # Run MCMC loop

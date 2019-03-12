@@ -35,7 +35,7 @@ CPF <- setRefClass(
       callSuper(stateTransFunc, transFunc, processNoise,
                 observationNoise,  X_init, X_ref)
     },
-    generateWeightedParticles = function(y, X_ref, AS = FALSE, nParticles = 100, resamplingMethod = 'multi')
+    generateWeightedParticles = function(y, X_ref, nParticles = 100, resamplingMethod = 'multi')
     {
       #print("generate weighted particles")
       if(is.null(y) || is.null(X_ref) )
@@ -77,13 +77,10 @@ CPF <- setRefClass(
         xpred = f(particles[,t-1], t-1)
         logweights = dnorm(y[t], mean = g(xpred[newAncestors]), sd = sqrt(R), log = TRUE)
         max_weight = max(logweights)
-        # Subtract the maximum value for numerical stability
-        w = exp(logweights - max_weight)
-        w = w/sum(w)  # Save the normalized weights
-
+        weights = exp(logweights - max_weight)
+        w = weights/sum(weights)  # Save the normalized weights
         # accumulate the log-likelihood
-        logLikelihood <<- logLikelihood + max_weight +
-          log(sum(w)) - log(N)
+        logLikelihood <<- logLikelihood + max_weight + log(sum(weights)) - log(N)
 
         ancestors = resampling(w)
         newAncestors = newAncestors[ancestors]
@@ -93,7 +90,7 @@ CPF <- setRefClass(
         # ancestor resampling
         if(AS){
           # ancestor sampling
-          m = dnorm(x_ref[t], mean = xpred[newAncestors], sd = sqrt(Q), log = TRUE)
+          m = dnorm(x_ref[t], mean = xpred, sd = sqrt(Q), log = TRUE)
           const = max(m)  # Subtract the maximum value for numerical stability
           w_as = exp(m - const)
           w_as <- w*w_as

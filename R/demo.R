@@ -24,6 +24,7 @@ source("R/auxiliaryParticleFilter.R")
 source("R/particleGibbs.R")
 source("R/bootstrapParticleFilter.R") # for bootstrap PF
 source("R/GPSSM.R")
+source("R/iPMCMC.R")
 
 demoBPF <- function()
 {
@@ -163,7 +164,7 @@ demoCPF <- function()
 demoPG <- function()
 {
   # Set up some parameters
-  N = 100 # Number of particles
+  N = 10 # Number of particles
   T = 100 # Length of data record
 
   # define functions
@@ -179,10 +180,10 @@ demoPG <- function()
   x <- res$x
   y <- res$y
 
-  x_ref = rep(0, N)
-  numMCMC = 1000
+  x_ref = rep(0, T)
+  numMCMC = 100
   pf = ParticleGibbs(stateTransFunc, transferFunc, X_init=0)
-  pf$simulate(y, x_ref, resamplingMethod = 'systematic', M = numMCMC)
+  pf$simulate(y, x_ref, N, resamplingMethod = 'systematic', M = numMCMC)
   pf$plotGeneology()
   x_multi = pf$sampleStateTrajectory()
   print(pf$getLogLikelihood())
@@ -205,7 +206,7 @@ demoPG <- function()
 demoPGAS <- function()
 {
   # Set up some parameters
-  N = 100 # Number of particles
+  N = 10 # Number of particles
   T = 100 # Length of data record
 
   # define functions
@@ -221,10 +222,10 @@ demoPGAS <- function()
   x <- res$x
   y <- res$y
 
-  x_ref = rep(0, N)
-  numMCMC = 1000
+  x_ref = rep(0, T)
+  numMCMC = 100
   pf = ParticleGibbs(stateTransFunc, transferFunc, X_init=0, ancestorSampling=TRUE)
-  pf$simulate(y, x_ref, resamplingMethod = 'systematic', M = numMCMC)
+  pf$simulate(y, x_ref, N, resamplingMethod = 'systematic', M = numMCMC)
   pf$plotGeneology()
   x_multi = pf$sampleStateTrajectory()
   print(pf$getLogLikelihood())
