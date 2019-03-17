@@ -191,7 +191,7 @@ demoPG <- function()
   p <-plot_ly(x = c(1:T), y = x,
               name = 'Real States', type = 'scatter', mode = 'lines+markers')
   add_lines(p, x = c(1:T), y = x_multi,
-               name = 'SMC Filtered States', type = 'scatter', mode = 'lines+markers')
+               name = 'PG Filtered States', type = 'scatter', mode = 'lines+markers')
 
   burnin = floor(numMCMC * .3)
   q = pf$sampleProcessNoise()
@@ -233,7 +233,7 @@ demoPGAS <- function()
   p <-plot_ly(x = c(1:T), y = x,
               name = 'Real States', type = 'scatter', mode = 'lines+markers')
   add_lines(p, x = c(1:T), y = x_multi,
-            name = 'SMC Filtered States', type = 'scatter', mode = 'lines+markers')
+            name = 'PGAS Filtered States', type = 'scatter', mode = 'lines+markers')
 
   burnin = floor(numMCMC * .3)
   q = pf$sampleProcessNoise()
@@ -342,5 +342,5 @@ demo_iPG <- function()
   p <-plot_ly(x = c(1:T), y = x,
               name = 'Real States', type = 'scatter', mode = 'lines+markers')
   add_lines(p, x = c(1:T), y = res_iPG,
-            name = 'CPF_AS Filtered States', type = 'scatter', mode = 'lines+markers')
+            name = 'iPMCMC Filtered States', type = 'scatter', mode = 'lines+markers')
 }
